@@ -26,6 +26,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,8 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
-import org.apache.tomcat.util.collections.SynchronizedQueue;
-import org.apache.tomcat.util.collections.SynchronizedStack;
 import org.apache.tomcat.util.net.NioEndpoint.NioSocketWrapper;
 import org.apache.tomcat.util.res.StringManager;
 
@@ -43,8 +43,8 @@ public class NioBlockingSelector {
     private static final Log log = LogFactory.getLog(NioBlockingSelector.class);
     protected static final StringManager sm = StringManager.getManager(NioBlockingSelector.class);
 
-    private final SynchronizedStack<KeyReference> keyReferenceStack =
-            new SynchronizedStack<>();
+    private final ConcurrentLinkedDeque<KeyReference> keyReferenceStack =
+            new ConcurrentLinkedDeque<>();
 
     protected Selector sharedSelector;
 
@@ -86,7 +86,7 @@ public class NioBlockingSelector {
         if (key == null) {
             throw new IOException(sm.getString("nioBlockingSelector.keyNotRegistered"));
         }
-        KeyReference reference = keyReferenceStack.pop();
+        KeyReference reference = keyReferenceStack.pollLast();
         if (reference == null) {
             reference = new KeyReference();
         }
@@ -139,7 +139,7 @@ public class NioBlockingSelector {
                 poller.cancelKey(reference.key);
             }
             reference.key = null;
-            keyReferenceStack.push(reference);
+            keyReferenceStack.addLast(reference);
         }
         return written;
     }
@@ -162,7 +162,7 @@ public class NioBlockingSelector {
         if (key == null) {
             throw new IOException(sm.getString("nioBlockingSelector.keyNotRegistered"));
         }
-        KeyReference reference = keyReferenceStack.pop();
+        KeyReference reference = keyReferenceStack.pollLast();
         if (reference == null) {
             reference = new KeyReference();
         }
@@ -209,7 +209,7 @@ public class NioBlockingSelector {
                 poller.cancelKey(reference.key);
             }
             reference.key = null;
-            keyReferenceStack.push(reference);
+            keyReferenceStack.addLast(reference);
         }
         return read;
     }
@@ -218,7 +218,7 @@ public class NioBlockingSelector {
     protected static class BlockPoller extends Thread {
         protected volatile boolean run = true;
         protected Selector selector = null;
-        protected final SynchronizedQueue<Runnable> events = new SynchronizedQueue<>();
+        protected final ConcurrentLinkedQueue<Runnable> events = new ConcurrentLinkedQueue<>();
         public void disable() {
             run = false;
             selector.wakeup();

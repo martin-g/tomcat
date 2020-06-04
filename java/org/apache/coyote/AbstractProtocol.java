@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,7 +45,6 @@ import org.apache.coyote.http11.upgrade.UpgradeProcessorInternal;
 import org.apache.juli.logging.Log;
 import org.apache.tomcat.InstanceManager;
 import org.apache.tomcat.util.ExceptionUtils;
-import org.apache.tomcat.util.collections.SynchronizedStack;
 import org.apache.tomcat.util.modeler.Registry;
 import org.apache.tomcat.util.net.AbstractEndpoint;
 import org.apache.tomcat.util.net.AbstractEndpoint.Handler;
@@ -1178,7 +1178,7 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
         }
     }
 
-    protected static class RecycledProcessors extends SynchronizedStack<Processor> {
+    protected static class RecycledProcessors extends ConcurrentLinkedDeque<Processor> {
 
         private final transient ConnectionHandler<?> handler;
         protected final AtomicInteger size = new AtomicInteger(0);
@@ -1189,13 +1189,13 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
 
         @SuppressWarnings("sync-override") // Size may exceed cache size a bit
         @Override
-        public boolean push(Processor processor) {
+        public boolean offerLast(Processor processor) {
             int cacheSize = handler.getProtocol().getProcessorCache();
             boolean offer = cacheSize == -1 ? true : size.get() < cacheSize;
             //avoid over growing our cache or add after we have stopped
             boolean result = false;
             if (offer) {
-                result = super.push(processor);
+                result = super.offerLast(processor);
                 if (result) {
                     size.incrementAndGet();
                 }
@@ -1204,10 +1204,15 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
             return result;
         }
 
+        @Override
+        public void push(final Processor processor) {
+            offerLast(processor);
+        }
+
         @SuppressWarnings("sync-override") // OK if size is too big briefly
         @Override
-        public Processor pop() {
-            Processor result = super.pop();
+        public Processor pollLast() {
+            Processor result = super.pollLast();
             if (result != null) {
                 size.decrementAndGet();
             }
@@ -1215,11 +1220,16 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
         }
 
         @Override
+        public Processor pop() {
+            return pollLast();
+        }
+
+        @Override
         public synchronized void clear() {
-            Processor next = pop();
+            Processor next = pollLast();
             while (next != null) {
                 handler.unregister(next);
-                next = pop();
+                next = pollLast();
             }
             super.clear();
             size.set(0);
