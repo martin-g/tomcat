@@ -19,8 +19,11 @@ jobs:
     include:
       - arch: s390x
         jdk: openjdk11
-      - arch: arm64
+      - arch: arm64-graviton2
         jdk: oraclejdk8
+        os: linux
+        dist: focal
+        group: edge
       - arch: ppc64le
         jdk: oraclejdk8
 
