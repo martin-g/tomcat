@@ -22,7 +22,7 @@ jobs:
       - arch: arm64-graviton2
         jdk: oraclejdk8
         os: linux
-        dist: focal
+        dist: bionic
         group: edge
       - arch: ppc64le
         jdk: oraclejdk8
