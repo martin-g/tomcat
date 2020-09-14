@@ -20,7 +20,7 @@ jobs:
       - arch: s390x
         jdk: openjdk11
       - arch: arm64-graviton2
-        jdk: oraclejdk8
+        jdk: openjdk11
         os: linux
         dist: bionic
         group: edge
