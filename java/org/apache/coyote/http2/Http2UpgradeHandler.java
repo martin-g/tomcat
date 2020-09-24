@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -121,7 +123,7 @@ class Http2UpgradeHandler extends AbstractStream implements InternalHttpUpgradeH
     private HpackDecoder hpackDecoder;
     private HpackEncoder hpackEncoder;
 
-    private final Map<Integer,Stream> streams = new ConcurrentHashMap<>();
+    private final ConcurrentSkipListMap<Integer,Stream> streams = new ConcurrentSkipListMap<>();
     protected final AtomicInteger activeRemoteStreamCount = new AtomicInteger(0);
     // Start at -1 so the 'add 2' logic in closeIdleStreams() works
     private volatile int maxActiveRemoteStreamId = -1;
@@ -1485,11 +1487,11 @@ class Http2UpgradeHandler extends AbstractStream implements InternalHttpUpgradeH
 
 
     private void closeIdleStreams(int newMaxActiveRemoteStreamId) {
-        for (Entry<Integer,Stream> entry : streams.entrySet()) {
-            if (entry.getKey().intValue() > maxActiveRemoteStreamId &&
-                    entry.getKey().intValue() < newMaxActiveRemoteStreamId) {
-                entry.getValue().closeIfIdle();
-            }
+        final ConcurrentNavigableMap<Integer, Stream> subMap = streams.subMap(
+                Integer.valueOf(maxActiveRemoteStreamId), false,
+                Integer.valueOf(newMaxActiveRemoteStreamId), false);
+        for (Stream stream : subMap.values()) {
+            stream.closeIfIdle();
         }
         maxActiveRemoteStreamId = newMaxActiveRemoteStreamId;
     }
