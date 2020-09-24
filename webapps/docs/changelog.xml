@@ -83,6 +83,11 @@
         speed of applications with a large number of JARs. Patch
         provided by Jatin Kamnani. (remm)
       </update>
+      <fix>
+        Throw <code>SQLException</code> instead of
+        <code>NullpointerException</code> when failing to connect to the
+        database. (kfujino)
+      </fix>
     </changelog>
   </subsection>
   <subsection name="Coyote">
@@ -108,6 +113,11 @@
         Correct some double counting in the code that tracks the number of
         in-flight asynchronous requests. The tracking enables Tomcat to shutdown
         gracefully when asynchronous processing is in use. (markt)
+      </fix>
+      <fix>
+        Improve the error handling for the HTTP/2 connection preface when the
+        Connector is configured with <code>useAsycIO=&quot;true&quot;</code>.
+        (markt)
       </fix>
     </changelog>
   </subsection>
@@ -155,6 +165,12 @@
         Expand coverage of Russian translations. Pull request provided by
         Nikolay Gribanov. (markt)
       </add>
+      <update>
+        Update the OWB module to Apache OpenWebBeans 2.0.18. (remm)
+      </update>
+      <update>
+        Update the CXF module to Apache CXF 3.4.0. (remm)
+      </update>
     </changelog>
   </subsection>
 </section>
