@@ -1578,12 +1578,15 @@ class Http2UpgradeHandler extends AbstractStream implements InternalHttpUpgradeH
             log.debug(sm.getString("upgradeHandler.reset.receive", getConnectionId(), Integer.toString(streamId),
                     Long.toString(errorCode)));
         }
-        Stream stream = getStream(streamId, true);
-        boolean active = stream.isActive();
-        stream.checkState(FrameType.RST);
-        stream.receiveReset(errorCode);
-        if (active) {
-            activeRemoteStreamCount.decrementAndGet();
+        boolean unknownIsError = Http2Error.CANCEL.getCode() != errorCode;
+        Stream stream = getStream(streamId, unknownIsError);
+        if (stream != null) {
+            boolean active = stream.isActive();
+            stream.checkState(FrameType.RST);
+            stream.receiveReset(errorCode);
+            if (active) {
+                activeRemoteStreamCount.decrementAndGet();
+            }
         }
     }
 
