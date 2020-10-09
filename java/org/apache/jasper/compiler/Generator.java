@@ -546,7 +546,7 @@ class Generator {
      * preamble generation)
      */
     private void genPreamblePackage(String packageName) {
-        if (!"".equals(packageName) && packageName != null) {
+        if (packageName != null && !packageName.isEmpty()) {
             out.printil("package " + packageName + ";");
             out.println();
         }
@@ -1361,7 +1361,7 @@ class Generator {
                     if (!Modifier.isPublic(modifiers) ||
                             Modifier.isInterface(modifiers) ||
                             Modifier.isAbstract(modifiers) ||
-                            !jreCompat.canAcccess(null, constructor) ) {
+                            !jreCompat.canAccess(null, constructor) ) {
                         throw new Exception(Localizer.getMessage("jsp.error.invalid.bean",
                                 Integer.valueOf(modifiers)));
                     }

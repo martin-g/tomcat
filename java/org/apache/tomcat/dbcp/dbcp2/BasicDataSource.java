@@ -76,7 +76,6 @@ public class BasicDataSource implements DataSource, BasicDataSourceMXBean, MBean
             if (Utils.IS_SECURITY_ENABLED) {
                 final ClassLoader loader = BasicDataSource.class.getClassLoader();
                 final String dbcpPackageName = BasicDataSource.class.getPackage().getName();
-                loader.loadClass(dbcpPackageName + ".BasicDataSource$PaGetConnection");
                 loader.loadClass(dbcpPackageName + ".DelegatingCallableStatement");
                 loader.loadClass(dbcpPackageName + ".DelegatingDatabaseMetaData");
                 loader.loadClass(dbcpPackageName + ".DelegatingPreparedStatement");
@@ -455,7 +454,7 @@ public class BasicDataSource implements DataSource, BasicDataSourceMXBean, MBean
      *
      * @return A new connection factory.
      *
-     * @throws SQLException If the connection factort cannot be created
+     * @throws SQLException If the connection factory cannot be created
      */
     protected ConnectionFactory createConnectionFactory() throws SQLException {
         // Load the JDBC driver class
@@ -1562,7 +1561,7 @@ public class BasicDataSource implements DataSource, BasicDataSourceMXBean, MBean
      * Restarts the datasource.
      * <p>
      * This method calls {@link #close()} and {@link #start()} in sequence within synchronized scope so any
-     * connection requests that come in while the datsource is shutting down will be served by the new pool.
+     * connection requests that come in while the datasource is shutting down will be served by the new pool.
      * <p>
      * Idle connections that are stored in the connection pool when this method is invoked are closed, but
      * connections that are checked out to clients when this method is invoked are not affected. When client

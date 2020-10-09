@@ -445,7 +445,7 @@ public class JDBCStore extends StoreBase {
      * @param dataSourceName The JNDI name of the DataSource-factory
      */
     public void setDataSourceName(String dataSourceName) {
-        if (dataSourceName == null || "".equals(dataSourceName.trim())) {
+        if (dataSourceName == null || dataSourceName.trim().isEmpty()) {
             manager.getContext().getLogger().warn(
                     sm.getString(getStoreName() + ".missingDataSourceName"));
             return;
@@ -936,6 +936,9 @@ public class JDBCStore extends StoreBase {
         if (connectionPassword != null)
             props.put("password", connectionPassword);
         dbConnection = driver.connect(connectionURL, props);
+        if (dbConnection == null) {
+            throw new SQLException(sm.getString(getStoreName() + ".connectError", connectionURL));
+        }
         dbConnection.setAutoCommit(true);
         return dbConnection;
 

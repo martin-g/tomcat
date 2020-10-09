@@ -225,6 +225,8 @@
 
   <!-- Classpaths -->
   <path id="compile.classpath">
+    <pathelement location="${bnd.jar}"/>
+    <pathelement location="${osgi-annotations.jar}"/>
     <pathelement location="${jdt.jar}"/>
     <pathelement location="${saaj-api.jar}"/>
     <pathelement location="${jaxrpc-lib.jar}"/>
@@ -561,7 +563,6 @@
     <exclude name="org/apache/catalina/realm/JAASCallbackHandler.class" />
     <exclude name="org/apache/catalina/realm/JAASMemoryLoginModule.class" />
     <exclude name="org/apache/catalina/realm/JAASRealm.class" />
-    <exclude name="org/apache/catalina/realm/JDBCRealm.class" />
     <exclude name="org/apache/catalina/realm/JNDIRealm$User.class" />
     <exclude name="org/apache/catalina/realm/JNDIRealm.class" />
     <exclude name="org/apache/catalina/realm/LockOutRealm*" />
@@ -745,11 +746,13 @@
     <include name="org/apache/tomcat/jni/**" />
     <include name="org/apache/jk/**" />
     <include name="org/apache/tomcat/util/**" />
+    <exclude name="org/apache/tomcat/util/descriptor/tld/**" />
   </patternset>
 
   <patternset id="files.tomcat-embed-jasper" >
     <patternset refid="files.jasper" />
     <patternset refid="files.jsp-api" />
+    <include name="org/apache/tomcat/util/descriptor/tld/**" />
   </patternset>
 
   <patternset id="files.tomcat-embed-el" >
@@ -1005,7 +1008,7 @@
 
   </target>
 
-  <target name="package" depends="compile,build-manifests,setup-bnd" >
+  <target name="package" depends="compile,build-manifests" >
     <!--
     #### ORDER IS IMPORTANT ####
     Bnd will use the built jars to resolve import package versions and
@@ -1597,7 +1600,7 @@
     </txt2html>
   </target>
   <target name="embed-jars" description="Create experimental embedded jars"
-    depends="build-manifests,setup-bnd,compile" >
+    depends="build-manifests,setup-bnd,compile,package" >
 
     <mkdir dir="${tomcat.embed}" />
 
@@ -1975,7 +1978,20 @@
             <exclude name="**/*Performance.java" if="${test.excludePerformance}" />
             <!-- Exclude tests that Gump can't compile -->
             <exclude name="org/apache/tomcat/buildutil/**" />
+            <!--
+              Avoid running tests which require the SecurityManager with other
+              tests. See below for more details.
+            -->
+            <exclude name="**/*SecurityManager.java" />
           </fileset>
+        </batchtest>
+        <!--
+           Run tests which require the SecurityManager in their own forked
+           batch to ensure that global/system security settings don't pollute
+           other tests. See SecurityManagerBaseTest.java for more details.
+        -->
+        <batchtest todir="${test.reports}" unless="test.entry" fork="true">
+          <fileset dir="test" includes="**/SecurityManager.java" excludes="${test.exclude}" />
         </batchtest>
       </junit>
     </sequential>
@@ -2176,7 +2192,7 @@ Apache Tomcat ${version} native binaries for Win64 AMD64/EMT64 platform.
 
   </target>
 
-  <target name="javadoc" depends="dist-source"
+  <target name="javadoc" depends="dist-source,download-compile"
     description="Create the Tomcat javadoc" >
     <javadoc packagenames="jakarta.annotation.*"
       sourcepath="${tomcat.dist}/src/java"
@@ -2322,6 +2338,7 @@ Apache Tomcat ${version} native binaries for Win64 AMD64/EMT64 platform.
       <classpath>
         <path refid="compile.classpath"/>
         <path location="${ant.core.lib}"/>
+        <path location="${osgi-annotations.jar}"/>
       </classpath>
       <link href="../annotationapi"/>
       <link href="../servletapi"/>
@@ -3057,7 +3074,8 @@ skip.installer property in build.properties" />
   </target>
 
   <target name="download-compile"
-          description="Download components necessary to compile" >
+          description="Download components necessary to compile"
+          depends="setup-bnd">
 
     <!-- Download Commons Daemon -->
     <antcall target="downloadgz-2">
@@ -3602,6 +3620,15 @@ Read the Building page on the Apache Tomcat documentation site for details on ho
       <param name="checksum.algorithm" value="${bnd.checksum.algorithm}"/>
       <param name="checksum.value" value="${bnd.checksum.value}"/>
     </antcall>
+    <!-- Download OSGi annotations -->
+    <antcall target="downloadfile">
+      <param name="sourcefile" value="${osgi-annotations.loc}"/>
+      <param name="destfile" value="${osgi-annotations.jar}"/>
+      <param name="destdir" value="${osgi-annotations.home}"/>
+      <param name="checksum.enabled" value="${osgi-annotations.checksum.enabled}"/>
+      <param name="checksum.algorithm" value="${osgi-annotations.checksum.algorithm}"/>
+      <param name="checksum.value" value="${osgi-annotations.checksum.value}"/>
+    </antcall>
   </target>
 
   <target name="setup-bnd" depends="download-bnd">
@@ -3639,28 +3666,41 @@ Read the Building page on the Apache Tomcat documentation site for details on ho
     <attribute name="libs" description="libraries to use for bnd classpath analysis relative to ${tomcat.output}"
                default="build/lib/*.jar,build/bin/tomcat-juli.jar" />
     <sequential>
-      <jar jarfile="@{jarfile}" manifest="@{manifest}">
-        <fileset dir="@{filesDir}">
+      <local name="jar.uptodate"/>
+      <uptodate property="jar.uptodate" targetfile="@{jarfile}" >
+        <srcfiles dir="@{filesDir}">
           <patternset refid="@{filesId}"/>
           <!-- Javadoc exclusions -->
           <exclude name="**/package.html" />
-        </fileset>
-        <zipfileset dir="@{meta-inf}" prefix="META-INF/"
-                    excludes=".gitignore" />
-        <zipfileset file="@{notice}" fullpath="META-INF/NOTICE" />
-        <zipfileset file="@{license}" fullpath="META-INF/LICENSE" />
-      </jar>
-      <antcall target="add-osgi" >
-        <param name="jarfile" value="@{jarfile}" />
-        <param name="addOSGi" value="@{addOSGi}" />
-        <param name="libs" value="@{libs}" />
-      </antcall>
-      <antcall target="add-graal">
-        <param name="jarfile" value="@{jarfile}" />
-        <param name="addGraal" value="@{addGraal}" />
-        <param name="graalFiles" value="@{graalFiles}" />
-        <param name="graalPrefix" value="@{graalPrefix}" />
-      </antcall>
+        </srcfiles>
+        <srcfiles dir="@{meta-inf}" excludes=".gitignore" />
+        <srcfiles file="@{notice}" />
+        <srcfiles file="@{license}" />
+      </uptodate>
+      <sequential unless:true="${jar.uptodate}">
+        <jar jarfile="@{jarfile}" manifest="@{manifest}" >
+          <fileset dir="@{filesDir}">
+            <patternset refid="@{filesId}"/>
+            <!-- Javadoc exclusions -->
+            <exclude name="**/package.html" />
+          </fileset>
+          <zipfileset dir="@{meta-inf}" prefix="META-INF/"
+                      excludes=".gitignore" />
+          <zipfileset file="@{notice}" fullpath="META-INF/NOTICE" />
+          <zipfileset file="@{license}" fullpath="META-INF/LICENSE" />
+        </jar>
+        <antcall target="add-osgi" >
+          <param name="jarfile" value="@{jarfile}" />
+          <param name="addOSGi" value="@{addOSGi}" />
+          <param name="libs" value="@{libs}" />
+        </antcall>
+        <antcall target="add-graal">
+          <param name="jarfile" value="@{jarfile}" />
+          <param name="addGraal" value="@{addGraal}" />
+          <param name="graalFiles" value="@{graalFiles}" />
+          <param name="graalPrefix" value="@{graalPrefix}" />
+        </antcall>
+      </sequential>
     </sequential>
   </macrodef>
 

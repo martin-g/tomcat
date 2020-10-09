@@ -537,7 +537,7 @@ public class Http11Processor extends AbstractProcessor {
             // Ignore, an error here is already processed in prepareRequest
             // but is done again since the content length is still -1
         }
-        if (contentLength > 0 &&
+        if (contentLength > 0 && protocol.getMaxSwallowSize() > -1 &&
                 (contentLength - request.getBytesRead() > protocol.getMaxSwallowSize())) {
             // There is more data to swallow than Tomcat will accept so the
             // connection is going to be closed. Disable keep-alive which will
@@ -924,9 +924,13 @@ public class Http11Processor extends AbstractProcessor {
 
         // FIXME: Add transfer encoding header
 
-        if ((entityBody) && (!contentDelimitation)) {
-            // Mark as close the connection after the request, and add the
-            // connection: close header
+        if ((entityBody) && (!contentDelimitation) || connectionClosePresent) {
+            // Disable keep-alive if:
+            // - there is a response body but way for the client to determine
+            //   the content length information; or
+            // - there is a "connection: close" header present
+            // This will cause the "connection: close" header to be added if it
+            // is not already present.
             keepAlive = false;
         }
 

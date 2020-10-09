@@ -51,8 +51,8 @@ install:
     - wget -q $JDK_URL && tar xzf OpenJDK*.tar.gz
     - if test "$ARCH" = "s390x"; then mv jdk-11* jdk; else mv jdk8* jdk; fi
     - export JAVA_HOME=`pwd`/jdk
-    - wget -q https://mirrors.netix.net/apache/ant/binaries/apache-ant-1.10.8-bin.tar.gz && tar xzf apache-ant-*-bin.tar.gz
-    - export ANT_HOME=`pwd`/apache-ant-1.10.8
+    - wget -q https://mirrors.netix.net/apache/ant/binaries/apache-ant-1.10.9-bin.tar.gz && tar xzf apache-ant-*-bin.tar.gz
+    - export ANT_HOME=`pwd`/apache-ant-1.10.9
     - export PATH="$JAVA_HOME/bin:$ANT_HOME/bin:$PATH"
     - java -version
     - ant -version
@@ -74,7 +74,7 @@ install:
     - cd $CURR_PWD
     - yes | cp build.properties.default build.properties
     - echo >> build.properties
-    - echo "test.threads=16" >> build.properties
+    - echo "test.threads=4" >> build.properties
     - echo "test.relaxTiming=true" >> build.properties
     - echo "test.excludePerformance=true" >> build.properties
     - echo "test.openssl.path=/dev/null/openssl" >> build.properties

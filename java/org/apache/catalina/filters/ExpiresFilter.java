@@ -492,7 +492,7 @@ public class ExpiresFilter extends FilterBase {
         private final List<Duration> durations;
 
         /**
-         * Starting point of the elaspse to set in the response.
+         * Starting point of the elapse to set in the response.
          */
         private final StartingPoint startingPoint;
 
@@ -520,8 +520,8 @@ public class ExpiresFilter extends FilterBase {
 
     /**
      * Expiration configuration starting point. Either the time the
-     * html-page/servlet-response was served ({@link StartingPoint#ACCESS_TIME})
-     * or the last time the html-page/servlet-response was modified (
+     * HTML-page/servlet-response was served ({@link StartingPoint#ACCESS_TIME})
+     * or the last time the HTML-page/servlet-response was modified (
      * {@link StartingPoint#LAST_MODIFICATION_TIME}).
      */
     protected enum StartingPoint {
@@ -1137,7 +1137,7 @@ public class ExpiresFilter extends FilterBase {
     /**
      * @param str The String to check
      * @return {@code true} if the given {@code str} has at least one
-     * character (can be a withespace).
+     * character (can be a whitespace).
      */
     protected static boolean isNotEmpty(String str) {
         return !isEmpty(str);
@@ -1217,7 +1217,7 @@ public class ExpiresFilter extends FilterBase {
             if (response.isCommitted()) {
                 if (log.isDebugEnabled()) {
                     log.debug(sm.getString(
-                            "expiresFilter.responseAlreadyCommited",
+                            "expiresFilter.responseAlreadyCommitted",
                             httpRequest.getRequestURL()));
                 }
                 chain.doFilter(request, response);
