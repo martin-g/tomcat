@@ -22,6 +22,7 @@ jobs:
         os: linux
         dist: bionic
         group: edge
+        virt: vm
       - arch: ppc64le
 
 addons:
