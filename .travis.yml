@@ -15,11 +15,10 @@
 
 dist: bionic
 
-jobs:
-    include:
-      - arch: s390x
-      - arch: arm64
-      - arch: ppc64le
+arch: 
+  - s390x
+  - arm64
+  - ppc64le
 
 addons:
     apt:
