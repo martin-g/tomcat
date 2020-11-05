@@ -18,9 +18,7 @@ dist: bionic
 jobs:
     include:
       - arch: s390x
-      - arch: arm64-graviton2
-        group: edge
-        virt: lxd
+      - arch: arm64
       - arch: ppc64le
 
 addons:
